@@ -182,6 +182,7 @@ export class MangoClient {
       blockhashCommitment?: Commitment;
     } = {},
   ) {
+    console.log("Custom mango version loaded 1")
     this.connection = connection;
     this.programId = programId;
     this.lastSlot = 0;
@@ -303,6 +304,7 @@ export class MangoClient {
     additionalSigners: Keypair[],
     timeout: number | null = 30000,
     confirmLevel: TransactionConfirmationStatus = 'processed',
+    onTxCreated?: (txid: TransactionSignature) => any,
   ): Promise<TransactionSignature> {
     await this.signTransaction({
       transaction,
@@ -317,6 +319,10 @@ export class MangoClient {
       rawTransaction,
       { skipPreflight: true },
     );
+
+    if (onTxCreated) {
+      onTxCreated(txid);
+    }
 
     if (this.postSendTxCallback) {
       try {
@@ -1040,6 +1046,7 @@ export class MangoClient {
     info?: string,
     referrerPk?: PublicKey,
     payerPk?: PublicKey,
+    onTxCreated?: (sig: TransactionSignature) => any,
   ): Promise<[string, TransactionSignature] | undefined> {
     if (!owner.publicKey) {
       return;
@@ -1163,6 +1170,9 @@ export class MangoClient {
       transaction,
       owner,
       additionalSigners,
+      undefined,
+      undefined,
+      onTxCreated,
     );
 
     return [mangoAccountPk.toString(), txid];
@@ -1186,6 +1196,7 @@ export class MangoClient {
     tokenAcc: PublicKey,
 
     quantity: number,
+    onTxCreated?: (sig: TransactionSignature) => any,
   ): Promise<TransactionSignature | undefined> {
     if (!owner.publicKey) {
       return;
@@ -1253,7 +1264,7 @@ export class MangoClient {
       );
     }
 
-    return await this.sendTransaction(transaction, owner, additionalSigners);
+    return await this.sendTransaction(transaction, owner, additionalSigners, undefined, undefined, onTxCreated);
   }
 
   /**
@@ -1677,6 +1688,7 @@ export class MangoClient {
     bookSideInfo?: AccountInfo<Buffer>,
     reduceOnly?: boolean,
     referrerMangoAccountPk?: PublicKey,
+    onTxCreated?: (txid: TransactionSignature) => any,
   ): Promise<TransactionSignature | undefined> {
     if (!owner.publicKey) {
       return;
@@ -1745,7 +1757,7 @@ export class MangoClient {
       transaction.add(consumeInstruction);
     }
 
-    return await this.sendTransaction(transaction, owner, additionalSigners);
+    return await this.sendTransaction(transaction, owner, additionalSigners, undefined, undefined, onTxCreated);
   }
 
   /**
